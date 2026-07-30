@@ -62,7 +62,8 @@ let state = {
         }
     ],
     completedByStudent: {
-    }
+    },
+    editingTramiteId: null
 };
 
 
@@ -437,7 +438,17 @@ function renderRealizadosTable() {
     const tbody = document.getElementById("tbody-realizados");
     tbody.innerHTML = "";
 
-    let list = state.tramites.filter(t => t.completed);
+    const realizados = state.completedByStudent[state.loggedStudent.matricula] || [];
+    let list = realizados.map(r => {
+        const tramite = state.tramites.find(t => t.id === r.tramiteId);
+
+        if (!tramite) return null;
+
+        return {
+            ...tramite,
+            completedAt: r.completedAt
+        };
+    }).filter(t => t !== null);
 
     const searchVal = (document.getElementById("search-realizados")?.value || "").toLowerCase();
     const catVal = document.getElementById("filter-category-realizados")?.value || "Todos";
@@ -474,12 +485,15 @@ function filterRealizadosTable() {
 }
 
 function reopenTramiteAction(id) {
-    const t = state.tramites.find(item => item.id === id);
-    if (t) {
-        t.completed = false;
-        t.completedAt = null;
-    }
+
+    const matricula = state.loggedStudent.matricula;
+
+    state.completedByStudent[matricula] =
+        (state.completedByStudent[matricula] || []).filter(r => r.tramiteId !== id);
+
     renderRealizadosTable();
+    renderStudentDashboard();
+
     showToast("Trámite reabierto");
 }
 
@@ -561,9 +575,18 @@ function renderDeptTable() {
             <td class="p-3 text-slate-600 font-mono text-[11px]">${t.deadlineText}</td>
             <td class="p-3 text-slate-700 font-medium">${t.targetAudience === 'Especifico' ? `Matrícula: ${t.specificMatricula}` : 'Todos los alumnos'}</td>
             <td class="p-3 text-center space-x-1">
-                <button onclick="deleteTramiteDept(${t.id})" class="text-rose-600 font-bold hover:underline px-2 py-0.5 bg-rose-50 rounded border border-rose-200">
+                <button
+                    onclick="openReportModal(${t.id})"
+                    class="text-blue-600 font-bold hover:underline px-2 py-0.5 bg-blue-50 rounded border border-blue-200">
+                    Reporte
+                </button>
+
+                <button
+                    onclick="deleteTramiteDept(${t.id})"
+                    class="text-rose-600 font-bold hover:underline px-2 py-0.5 bg-rose-50 rounded border border-rose-200">
                     Eliminar
                 </button>
+
             </td>
         `;
         tbody.appendChild(tr);
@@ -584,6 +607,55 @@ function handleSurveySubmit(e) {
     e.preventDefault();
     showToast("¡Gracias por evaluar SIGA! Tu opinión ha sido registrada.", "fa-heart");
     switchStudentTab('dashboard');
+}
+
+function openReportModal(id) {
+
+    const tramite = state.tramites.find(t => t.id === id);
+    if (!tramite) return;
+
+    document.getElementById("report-title").innerText =
+        `Reporte: ${tramite.title}`;
+
+    const tbody = document.getElementById("report-body");
+    tbody.innerHTML = "";
+
+    state.students.forEach(alumno => {
+
+        const realizados =
+            state.completedByStudent[alumno.matricula] || [];
+
+        const realizado = realizados.some(r => r.tramiteId === id);
+
+        const tr = document.createElement("tr");
+
+        tr.className = "border-b border-slate-200";
+
+        tr.innerHTML = `
+            <td class="p-3 font-mono">${alumno.matricula}</td>
+
+            <td class="p-3">${alumno.nombre}</td>
+
+            <td class="p-3 text-center">
+                ${
+                    realizado
+                    ? '<span class="text-emerald-600 font-bold">✅ Realizado</span>'
+                    : '<span class="text-amber-600 font-bold">⏳ Pendiente</span>'
+                }
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+
+    });
+
+    document.getElementById("modal-report")
+        .classList.remove("hidden");
+}
+
+function closeReportModal() {
+    document.getElementById("modal-report")
+        .classList.add("hidden");
 }
 
 // INITIAL LOAD
