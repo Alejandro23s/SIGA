@@ -521,30 +521,63 @@ function handleCreateTramite(e) {
     const instructions = document.getElementById("dept-instructions").value.trim();
     const location = document.getElementById("dept-location").value.trim() || `Ventanilla ${state.activeDeptName}`;
 
-    const newId = Date.now();
-    state.tramites.unshift({
-        id: newId,
-        title: title,
-        category: cat,
-        deadline: `${date} ${time}`,
-        deadlineText: `${date} - ${time}`,
-        urgency: "ontime",
-        statusText: `Vence el ${date}`,
-        location: location,
-        hours: "08:00 a.m. - 3:00 p.m.",
-        responsible: `Departamento de ${state.activeDeptName}`,
-        completed: false,
-        completedAt: null,
-        targetAudience: audience,
-        specificMatricula: specificMat,
-        description: instructions,
-        requirements: ["Presentar identificación oficial", "Documentación en regla"]
-    });
+    if (state.editingTramiteId !== null) {
+        const tramite = state.tramites.find(
+            t => t.id === state.editingTramiteId
+        );
+        if(tramite){
+            tramite.title = title;
+            tramite.category = cat;
+            tramite.deadline = `${date} ${time}`;
+            tramite.deadlineText = `${date} - ${time}`;
+            tramite.location = location;
+            tramite.targetAudience = audience;
+            tramite.specificMatricula = specificMat;
+            tramite.description = instructions;
+            tramite.responsible = `Departamento de ${state.activeDeptName}`;
+            tramite.statusText = `Vence el ${date}`;
+        }
+        showToast(
+            "Trámite actualizado correctamente",
+            "fa-pen"
+        );
+    } else {
+        const newId = Date.now();
+        state.tramites.unshift({
+            id: newId,
+            title: title,
+            category: cat,
+            deadline: `${date} ${time}`,
+            deadlineText: `${date} - ${time}`,
+            urgency: "ontime",
+            statusText: `Vence el ${date}`,
+            location: location,
+            hours: "08:00 a.m. - 3:00 p.m.",
+            responsible: `Departamento de ${state.activeDeptName}`,
+            completed: false,
+            completedAt: null,
+            targetAudience: audience,
+            specificMatricula: specificMat,
+            description: instructions,
+            requirements: [
+                "Presentar identificación oficial",
+                "Documentación en regla"
+            ]
+
+        });
+        showToast(
+            "Nuevo trámite registrado exitosamente",
+            "fa-plus-circle"
+        );
+
+    }
 
     e.target.reset();
     toggleMatriculasInput();
+    state.editingTramiteId = null;
+    document.getElementById("btn-save-tramite").innerText =
+        "[ GUARDAR TRÁMITE ]";
     renderDeptTable();
-    showToast("Nuevo trámite registrado exitosamente", "fa-plus-circle");
 }
 
 function renderDeptTable() {
@@ -575,19 +608,25 @@ function renderDeptTable() {
             <td class="p-3 text-slate-600 font-mono text-[11px]">${t.deadlineText}</td>
             <td class="p-3 text-slate-700 font-medium">${t.targetAudience === 'Especifico' ? `Matrícula: ${t.specificMatricula}` : 'Todos los alumnos'}</td>
             <td class="p-3 text-center space-x-1">
-                <button
-                    onclick="openReportModal(${t.id})"
-                    class="text-blue-600 font-bold hover:underline px-2 py-0.5 bg-blue-50 rounded border border-blue-200">
-                    Reporte
-                </button>
+            <button
+                onclick="openReportModal(${t.id})"
+                class="text-blue-600 font-bold hover:underline px-2 py-0.5 bg-blue-50 rounded border border-blue-200">
+                Reporte
+            </button>
 
-                <button
-                    onclick="deleteTramiteDept(${t.id})"
-                    class="text-rose-600 font-bold hover:underline px-2 py-0.5 bg-rose-50 rounded border border-rose-200">
-                    Eliminar
-                </button>
+            <button
+                onclick="editTramite(${t.id})"
+                class="text-amber-600 font-bold hover:underline px-2 py-0.5 bg-amber-50 rounded border border-amber-200">
+                Editar
+            </button>
 
-            </td>
+            <button
+                onclick="deleteTramiteDept(${t.id})"
+                class="text-rose-600 font-bold hover:underline px-2 py-0.5 bg-rose-50 rounded border border-rose-200">
+                Eliminar
+            </button>
+
+        </td>
         `;
         tbody.appendChild(tr);
     });
@@ -601,6 +640,81 @@ function deleteTramiteDept(id) {
     state.tramites = state.tramites.filter(t => t.id !== id);
     renderDeptTable();
     showToast("Trámite eliminado del catálogo", "fa-trash");
+}
+function editTramite(id) {
+
+    const tramite = state.tramites.find(t => t.id === id);
+
+    if (!tramite) {
+        showToast("No se encontró el trámite", "fa-triangle-exclamation");
+        return;
+    }
+
+
+    state.editingTramiteId = id;
+
+
+    document.getElementById("dept-title").value = tramite.title;
+
+    document.getElementById("dept-date").value =
+        tramite.deadline.split(" ")[0];
+
+    document.getElementById("dept-time").value =
+        tramite.deadline.split(" ")[1];
+
+    document.getElementById("dept-category").value =
+        tramite.category;
+
+
+    document.getElementById("dept-instructions").value =
+        tramite.description;
+
+
+    document.getElementById("dept-location").value =
+        tramite.location;
+
+
+    // Destinatarios
+
+    const radio = document.querySelector(
+        `input[name="dept-destinatarios"][value="${tramite.targetAudience}"]`
+    );
+
+    if(radio){
+        radio.checked = true;
+    }
+
+
+    toggleMatriculasInput();
+
+
+    if(tramite.targetAudience === "Especifico"){
+
+        document.getElementById("dept-specific-matriculas").value =
+            Array.isArray(tramite.specificMatricula)
+            ? tramite.specificMatricula.join(", ")
+            : tramite.specificMatricula;
+
+    }else{
+
+        document.getElementById("dept-specific-matriculas").value = "";
+
+    }
+
+
+    document.getElementById("btn-save-tramite").innerText =
+        "[ ACTUALIZAR TRÁMITE ]";
+
+
+    document
+        .getElementById("dept-title")
+        .scrollIntoView({
+            behavior:"smooth"
+        });
+
+
+    showToast("Editando trámite seleccionado", "fa-pen");
+
 }
 
 function handleSurveySubmit(e) {
