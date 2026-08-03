@@ -9,7 +9,7 @@ let state = {
     editingTramiteId: null
 };
 
-const API_URL = "http://localhost:3000";
+const API_URL = "https://somewhat-dictionary-reduces-newspaper.trycloudflare.com";
 
 // UI HELPERS
 function showToast(msg, icon = "fa-check-circle") {
