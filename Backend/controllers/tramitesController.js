@@ -183,21 +183,17 @@ const editarTramite = (req, res) => {
 };
 
 const eliminarTramite = (req, res) => {
-
     const { id } = req.params;
-
     db.query(
         "DELETE FROM estatusalumnotramite WHERE Tramite_Id = ?",
         [id],
         (err) => {
-
             if (err) {
                 console.error(err);
                 return res.status(500).json({
                     mensaje: "Error al eliminar relaciones"
                 });
             }
-
             db.query(
                 "DELETE FROM tramites WHERE ID = ?",
                 [id],
@@ -209,14 +205,11 @@ const eliminarTramite = (req, res) => {
                             mensaje: "Error al eliminar trámite"
                         });
                     }
-
                     res.json({
                         mensaje: "Trámite eliminado"
                     });
-
                 }
             );
-
         }
     );
 
