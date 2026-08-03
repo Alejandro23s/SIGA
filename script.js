@@ -9,7 +9,7 @@ let state = {
     editingTramiteId: null
 };
 
-const API_URL = "https://somewhat-dictionary-reduces-newspaper.trycloudflare.com";
+const API_URL = " https://humor-advantages-undergraduate-gadgets.trycloudflare.com";
 
 // UI HELPERS
 function showToast(msg, icon = "fa-check-circle") {
