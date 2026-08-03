@@ -9,7 +9,7 @@ let state = {
     editingTramiteId: null
 };
 
-const API_URL = "https://lanes-optimal-quoted-workers.trycloudflare.com ";
+const API_URL = "https://goals-continue-appreciated-characterization.trycloudflare.com";
 
 // UI HELPERS
 function showToast(msg, icon = "fa-check-circle") {
