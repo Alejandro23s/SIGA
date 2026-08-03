@@ -64,7 +64,7 @@ async function handleStudentLogin(e) {
     //Buscar al alumno
     try {
         const respuesta = await fetch(
-            fetch(`${API_URL}/alumnos/${matriculaInput}`)
+            `${API_URL}/alumnos/${matriculaInput}`
         );
         if (!respuesta.ok) {
             showToast("La matrícula no existe", "fa-triangle-exclamation");
