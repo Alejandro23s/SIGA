@@ -18,8 +18,10 @@ require("./db");
 app.use("/alumnos", alumnosRoutes);
 app.use("/tramites", tramitesRoutes);
 app.use("/estatus", estatusRoutes);
+console.log("Ruta tipos-tramite cargada");
 app.use("/categorias", categoriasRoutes);
 app.use("/departamentos", departamentosRoutes);
+
 
 app.get("/", (req, res) => {
     res.send("Servidor SIGA funcionando 🚀");

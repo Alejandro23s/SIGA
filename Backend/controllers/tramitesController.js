@@ -45,17 +45,17 @@ const obtenerTramites = (req, res) => {
             );
             let urgency = "ontime";
             let statusText = "Disponible";
-            if (diferenciaDias < 0) {
+
+            if (diferenciaDias <= 3) {
                 urgency = "urgent";
-                statusText = "Vencido";
-            }
-            else if (diferenciaDias === 0) {
-                urgency = "urgent";
-                statusText = "Vence hoy";
-            }
-            else if (diferenciaDias <= 3) {
-                urgency = "upcoming";
-                statusText = `Vence en ${diferenciaDias} día${diferenciaDias === 1 ? "" : "s"}`;
+
+                if (diferenciaDias < 0) {
+                    statusText = "Vencido";
+                } else if (diferenciaDias === 0) {
+                    statusText = "Vence hoy";
+                } else {
+                    statusText = `Vence en ${diferenciaDias} día${diferenciaDias === 1 ? "" : "s"}`;
+                }
             }
             return {
                 ...t,
