@@ -4,68 +4,12 @@
 let state = {
     loggedStudent: null,
     currentUserType: null,
-    students: [
-        {
-            matricula: "e23192004",
-            nombre: "Karim Alejandro García D."
-        },
-        {
-            matricula: "e23192005",
-            nombre: "Alejandro Barajas"
-        },
-        {
-            matricula: "e23192006",
-            nombre: "Juan Pérez"
-        },
-        {
-            matricula: "e23192007",
-            nombre: "María López"
-        }
-    ],
     activeDeptName: "Control escolar",
-    tramites: [
-        {
-            id: 1,
-            title: "Pago de Reinscripción",
-            category: "Financiero",
-            deadline: "2026-08-15 23:59",
-            deadlineText: "15 Ago 2026 - 11:59 p.m.",
-            urgency: "urgent",
-            statusText: "Vencido hace 2 días",
-            location: "Ventanilla de Control Escolar, Edificio A",
-            hours: "Lunes a Viernes 08:00 a.m. - 3:00 p.m.",
-            responsible: "Departamento de Control Escolar",
-            completed: false,
-            completedAt: null,
-            targetAudience: "Todos",
-            specificMatricula: "",
-            description: "Realizar el pago correspondiente al cuatrimestre mayo-agosto para asegurar tu lugar y carga horaria en el sistema académico.",
-            requirements: ["Comprobante de pago", "Formato firmado", "Identificación oficial"]
-        },
-        {
-            id: 2,
-            title: "Pago de Mensualidad",
-            category: "Financiero",
-            deadline: "2026-08-10 23:59",
-            deadlineText: "10 Ago 2026 - 11:59 p.m.",
-            urgency: "urgent",
-            statusText: "Vencido hace 2 días",
-            location: "Caja Principal Edificio B",
-            hours: "08:00 a.m. - 4:00 p.m.",
-            responsible: "Departamento de Finanzas",
-            completed: false,
-            completedAt: null,
-            targetAudience: "Todos",
-            specificMatricula: "",
-            description: "Pago regular de la colegiatura mensual del periodo lectivo.",
-            requirements: ["Ficha de depósito / Transferencia", "Matrícula visible"]
-        }
-    ],
-    completedByStudent: {
-    },
+    tramites: [],
     editingTramiteId: null
 };
 
+const API_URL = "http://localhost:3000";
 
 // UI HELPERS
 function showToast(msg, icon = "fa-check-circle") {
@@ -111,25 +55,32 @@ function setLoginTab(mode) {
 }
 
 // AUTH HANDLERS
-function handleStudentLogin(e) {
+async function handleStudentLogin(e) {
     e.preventDefault();
     const matriculaInput = document.getElementById("input-matricula").value.trim();
 
     if(!matriculaInput) return;
     
     //Buscar al alumno
-    const alumno = state.students.find(student =>
-        student.matricula === matriculaInput
-    );
-    console.log(alumno);
-
-    if (!alumno) {
-        showToast("La matrícula no existe", "fa-triangle-exclamation");
+    try {
+        const respuesta = await fetch(
+            fetch(`${API_URL}/alumnos/${matriculaInput}`)
+        );
+        if (!respuesta.ok) {
+            showToast("La matrícula no existe", "fa-triangle-exclamation");
+            return;
+        }
+        const alumno = await respuesta.json();
+        state.loggedStudent = {
+            id: alumno.ID,
+            matricula: alumno.Matricula,
+            nombre: alumno.Nombre
+        };
+    } catch (error) {
+        console.error(error);
+        showToast("No se pudo conectar con el servidor", "fa-triangle-exclamation");
         return;
     }
-
-    state.currentUserType = 'student';
-    state.loggedStudent = alumno;
 
     document.getElementById("user-name-text").innerText = state.loggedStudent.nombre;
     document.getElementById("user-matricula-text").innerText = state.loggedStudent.matricula;
@@ -147,7 +98,7 @@ function handleStudentLogin(e) {
     showToast(`Bienvenido(a) ${state.loggedStudent.nombre}`);
 }
 
-function handleDeptLogin(e) {
+async function handleDeptLogin(e) {
     e.preventDefault();
     const deptName = document.getElementById("select-dept").value;
     const pass = document.getElementById("input-dept-password").value;
@@ -176,7 +127,9 @@ function handleDeptLogin(e) {
     document.getElementById("dept-title-header").innerText = `MÓDULO DE DEPARTAMENTO: ${deptName.toUpperCase()}`;
     document.getElementById("dept-admin-label").innerText = `Departamento de ${deptName}`;
 
+    await cargarTramites();
     renderDeptTable();
+
     showToast(`Módulo de ${deptName} iniciado`);
 }
 
@@ -228,8 +181,35 @@ function goToDeptDashboard() {
     renderDeptTable();
 }
 
+async function cargarTramites() {
+
+    try {
+        const respuesta = await fetch(`${API_URL}/tramites`);
+        if (!respuesta.ok) {
+            throw new Error("No se pudieron obtener los trámites");
+        }
+        const tramites = await respuesta.json();
+        state.tramites = tramites;
+        console.log("Trámites desde MySQL:", tramites);
+        return tramites;
+    } catch (error) {
+        console.error(error);
+        showToast("Error al cargar los trámites", "fa-triangle-exclamation");
+        console.log("Trámites cargados:", datos);
+        return [];
+    }
+}
+
+async function cargarTramitesCompletados(alumnoId) {
+    const respuesta = await fetch(`${API_URL}/estatus/${alumnoId}`);
+    const datos = await respuesta.json();
+
+    return datos;
+}
+
 // STUDENT DASHBOARD RENDERER
-function renderStudentDashboard() {
+async function renderStudentDashboard() {
+    const tramites = await cargarTramites();
     const containerUrgent = document.getElementById("container-urgent");
     const containerUpcoming = document.getElementById("container-upcoming");
     const containerOntime = document.getElementById("container-ontime");
@@ -238,15 +218,14 @@ function renderStudentDashboard() {
     containerUpcoming.innerHTML = "";
     containerOntime.innerHTML = "";
 
-    const realizados = state.completedByStudent[state.loggedStudent.matricula] || [];
+    const realizados = await cargarTramitesCompletados(state.loggedStudent.id);
     console.log("Alumno:", state.loggedStudent);
-
-    console.log("Realizados:", state.completedByStudent);
-
-    console.log("Trámites:", state.tramites);
-    const studentTramites = state.tramites.filter(t => {
+    console.log("Realizados:", realizados);
+    console.log("Trámites:", tramites);
+    
+    const studentTramites = tramites.filter(t => {
         // Si ya lo realizó este alumno, no mostrarlo
-        const yaRealizado = realizados.some(r => r.tramiteId === t.id);
+        const yaRealizado = realizados.some(r => r.Tramite_Id === t.id);
         if (yaRealizado) return false;
         // Si el trámite es específico
         if (t.targetAudience === "Especifico") {
@@ -360,12 +339,18 @@ function openTramiteModal(id) {
     document.getElementById("modal-description").innerText = t.description;
     document.getElementById("modal-deadline").innerText = t.deadlineText;
     document.getElementById("modal-location").innerText = t.location;
-    document.getElementById("modal-hours").innerText = t.hours;
+    document.getElementById("modal-hours").innerText = "No especificado";
     document.getElementById("modal-responsible").innerText = t.responsible;
 
     const reqList = document.getElementById("modal-requirements");
     reqList.innerHTML = "";
-    (t.requirements || []).forEach(req => {
+
+    // Si viene como texto desde MySQL, convertirlo a arreglo
+    const requisitos = Array.isArray(t.requirements)
+        ? t.requirements
+        : (t.requirements || "").split(",").map(r => r.trim());
+
+    requisitos.forEach(req => {
         const li = document.createElement("li");
         li.className = "flex items-center space-x-2";
         li.innerHTML = `<input type="checkbox" checked class="rounded text-icep-navy focus:ring-icep-navy"> <span class="font-medium">${req}</span>`;
@@ -398,55 +383,52 @@ function markCurrentAsCompleted() {
     closeModal();
 }
 
-function quickCompleteStudent(id) {
+async function quickCompleteStudent(id) {
+    const alumnoId = state.loggedStudent.id;
+    
 
-    const matricula = state.loggedStudent.matricula;
-
-    if (!state.completedByStudent[matricula]) {
-        state.completedByStudent[matricula] = [];
-    }
-
-    // Evitar registrar el mismo trámite dos veces
-    const yaExiste = state.completedByStudent[matricula].some(
-        t => t.tramiteId === id
-    );
-
-    if (yaExiste) {
-        showToast("Este trámite ya fue realizado.");
+    try {
+        const respuesta = await fetch(`${API_URL}/estatus`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                alumnoId,
+                tramiteId: id
+            })
+        });
+        const datos = await respuesta.json();
+        if (!respuesta.ok) {
+            showToast(datos.mensaje, "fa-circle-exclamation");
+            return;
+        }
+        console.log(datos);
+    } catch (error) {
+        console.error(error);
+        showToast("Error al guardar el trámite");
         return;
     }
-
-    const now = new Date();
-
-    state.completedByStudent[matricula].push({
-        tramiteId: id,
-        completedAt:
-            `${now.getDate().toString().padStart(2,'0')}/` +
-            `${(now.getMonth()+1).toString().padStart(2,'0')}/` +
-            `${now.getFullYear()} ` +
-            `${now.getHours().toString().padStart(2,'0')}:` +
-            `${now.getMinutes().toString().padStart(2,'0')}`
-    });
-
-    renderStudentDashboard();
+    await renderStudentDashboard();
+    await renderRealizadosTable();
 
     showToast("Trámite marcado como realizado", "fa-check-circle");
 }
 
 // HISTÓRICO TRÁMITES REALIZADOS
-function renderRealizadosTable() {
+async function renderRealizadosTable() {
     const tbody = document.getElementById("tbody-realizados");
     tbody.innerHTML = "";
 
-    const realizados = state.completedByStudent[state.loggedStudent.matricula] || [];
+    const realizados = await cargarTramitesCompletados(state.loggedStudent.id);
     let list = realizados.map(r => {
-        const tramite = state.tramites.find(t => t.id === r.tramiteId);
-
+        const tramite = state.tramites.find(
+            t => t.id === r.Tramite_Id
+        );
         if (!tramite) return null;
-
         return {
             ...tramite,
-            completedAt: r.completedAt
+            completedAt: new Date(r.Fecha_completado).toLocaleString("es-MX")
         };
     }).filter(t => t !== null);
 
@@ -484,17 +466,27 @@ function filterRealizadosTable() {
     renderRealizadosTable();
 }
 
-function reopenTramiteAction(id) {
+async function reopenTramiteAction(id) {
 
-    const matricula = state.loggedStudent.matricula;
-
-    state.completedByStudent[matricula] =
-        (state.completedByStudent[matricula] || []).filter(r => r.tramiteId !== id);
-
-    renderRealizadosTable();
-    renderStudentDashboard();
-
-    showToast("Trámite reabierto");
+    try {
+        const respuesta = await fetch(
+            `${API_URL}/estatus/${state.loggedStudent.id}/${id}`,
+            {
+                method: "DELETE"
+            }
+        );
+        const datos = await respuesta.json();
+        if (!respuesta.ok) {
+            showToast(datos.mensaje || "Error al reabrir el trámite");
+            return;
+        }
+        await renderRealizadosTable();
+        await renderStudentDashboard();
+        showToast("Trámite reabierto");
+    } catch (error) {
+        console.error(error);
+        showToast("Error al reabrir el trámite");
+    }
 }
 
 // DEPARTAMENTO ACTIONS
@@ -505,7 +497,7 @@ function toggleMatriculasInput() {
     else wrapper.classList.add("hidden");
 }
 
-function handleCreateTramite(e) {
+async function handleCreateTramite(e) {
     e.preventDefault();
 
     const title = document.getElementById("dept-title").value.trim();
@@ -522,53 +514,98 @@ function handleCreateTramite(e) {
     const location = document.getElementById("dept-location").value.trim() || `Ventanilla ${state.activeDeptName}`;
 
     if (state.editingTramiteId !== null) {
-        const tramite = state.tramites.find(
-            t => t.id === state.editingTramiteId
-        );
-        if(tramite){
-            tramite.title = title;
-            tramite.category = cat;
-            tramite.deadline = `${date} ${time}`;
-            tramite.deadlineText = `${date} - ${time}`;
-            tramite.location = location;
-            tramite.targetAudience = audience;
-            tramite.specificMatricula = specificMat;
-            tramite.description = instructions;
-            tramite.responsible = `Departamento de ${state.activeDeptName}`;
-            tramite.statusText = `Vence el ${date}`;
+        let departamentoId = 1;
+        if (state.activeDeptName === "Coordinacion academica") {
+            departamentoId = 1;
         }
-        showToast(
-            "Trámite actualizado correctamente",
-            "fa-pen"
-        );
+        else if (state.activeDeptName === "Certificacion y Titulacion academica") {
+            departamentoId = 2;
+        }
+        else if (state.activeDeptName === "Finanzas") {
+            departamentoId = 3;
+        }
+        try {
+            const respuesta = await fetch(
+                `${API_URL}/tramites/${state.editingTramiteId}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        departamentoId: departamentoId,
+                        categoriaId: Number(cat),
+                        titulo: title,
+                        descripcion: instructions,
+                        requisitos: "Presentar identificación oficial, Documentación en regla",
+                        lugarAtencion: location,
+                        fechaLimite: `${date} ${time}:00`,
+                        targetAudience: audience,
+                        specificMatricula: specificMat.join(",")
+                    })
+                }
+            );
+            const datos = await respuesta.json();
+            if (!respuesta.ok) {
+                showToast(datos.mensaje);
+                return;
+            }
+            showToast(
+                "Trámite actualizado correctamente",
+                "fa-pen"
+            );
+            state.tramites = await cargarTramites();
+            renderDeptTable();
+        } catch (error) {
+            console.error(error);
+            showToast("Error al actualizar el trámite");
+            return;
+        }
     } else {
-        const newId = Date.now();
-        state.tramites.unshift({
-            id: newId,
-            title: title,
-            category: cat,
-            deadline: `${date} ${time}`,
-            deadlineText: `${date} - ${time}`,
-            urgency: "ontime",
-            statusText: `Vence el ${date}`,
-            location: location,
-            hours: "08:00 a.m. - 3:00 p.m.",
-            responsible: `Departamento de ${state.activeDeptName}`,
-            completed: false,
-            completedAt: null,
-            targetAudience: audience,
-            specificMatricula: specificMat,
-            description: instructions,
-            requirements: [
-                "Presentar identificación oficial",
-                "Documentación en regla"
-            ]
-
-        });
-        showToast(
-            "Nuevo trámite registrado exitosamente",
-            "fa-plus-circle"
-        );
+        let departamentoId = 1;
+        if (state.activeDeptName === "Coordinacion academica") {
+            departamentoId = 1;
+        }
+        else if (state.activeDeptName === "Certificacion y Titulacion academica") {
+            departamentoId = 2;
+        }
+        else if (state.activeDeptName === "Finanzas") {
+            departamentoId = 3;
+        }
+        try {
+            const respuesta = await fetch(`${API_URL}/tramites`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    departamentoId: departamentoId,
+                    categoriaId: Number(cat),
+                    titulo: title,
+                    descripcion: instructions,
+                    requisitos: "Presentar identificación oficial, Documentación en regla",
+                    lugarAtencion: location,
+                    fechaLimite: `${date} ${time}:00`,
+                    targetAudience: audience,
+                    specificMatricula: specificMat.join(",")
+                })
+            });
+            const datos = await respuesta.json();
+            if (!respuesta.ok) {
+                showToast(datos.mensaje);
+                return;
+            }
+            showToast(
+                "Nuevo trámite registrado exitosamente",
+                "fa-plus-circle"
+            );
+            state.tramites = await cargarTramites();
+            renderDeptTable();
+        } catch (error) {
+            console.error(error);
+            showToast("Error al crear el trámite");
+            return;
+        }
 
     }
 
@@ -579,6 +616,31 @@ function handleCreateTramite(e) {
         "[ GUARDAR TRÁMITE ]";
     renderDeptTable();
 }
+
+async function cargarCategorias() {
+
+    const respuesta = await fetch(`${API_URL}/categorias`);
+
+    const categorias = await respuesta.json();
+
+    const select = document.getElementById("dept-category");
+
+    select.innerHTML = "";
+
+    categorias.forEach(cat => {
+
+        const option = document.createElement("option");
+
+        option.value = cat.ID;
+
+        option.textContent = cat.Nombre;
+
+        select.appendChild(option);
+
+    });
+
+}
+
 
 function renderDeptTable() {
     const tbody = document.getElementById("tbody-dept-tramites");
@@ -636,10 +698,31 @@ function filterDeptTable() {
     renderDeptTable();
 }
 
-function deleteTramiteDept(id) {
-    state.tramites = state.tramites.filter(t => t.id !== id);
-    renderDeptTable();
-    showToast("Trámite eliminado del catálogo", "fa-trash");
+async function deleteTramiteDept(id) {
+    const confirmar = confirm("¿Estás seguro de eliminar este trámite?");
+    if (!confirmar) return;
+    try {
+        const respuesta = await fetch(
+            `${API_URL}/tramites/${id}`,
+            {
+                method: "DELETE"
+            }
+        );
+        const datos = await respuesta.json();
+        if (!respuesta.ok) {
+            showToast(datos.mensaje);
+            return;
+        }
+        state.tramites = await cargarTramites();
+        renderDeptTable();
+        showToast(
+            "Trámite eliminado correctamente",
+            "fa-trash"
+        );
+    } catch (error) {
+        console.error(error);
+        showToast("Error al eliminar el trámite");
+    }
 }
 function editTramite(id) {
 
@@ -723,48 +806,54 @@ function handleSurveySubmit(e) {
     switchStudentTab('dashboard');
 }
 
-function openReportModal(id) {
-
+async function openReportModal(id) {
     const tramite = state.tramites.find(t => t.id === id);
     if (!tramite) return;
-
     document.getElementById("report-title").innerText =
         `Reporte: ${tramite.title}`;
-
     const tbody = document.getElementById("report-body");
     tbody.innerHTML = "";
-
-    state.students.forEach(alumno => {
-
-        const realizados =
-            state.completedByStudent[alumno.matricula] || [];
-
-        const realizado = realizados.some(r => r.tramiteId === id);
-
-        const tr = document.createElement("tr");
-
-        tr.className = "border-b border-slate-200";
-
-        tr.innerHTML = `
-            <td class="p-3 font-mono">${alumno.matricula}</td>
-
-            <td class="p-3">${alumno.nombre}</td>
-
-            <td class="p-3 text-center">
-                ${
-                    realizado
-                    ? '<span class="text-emerald-600 font-bold">✅ Realizado</span>'
-                    : '<span class="text-amber-600 font-bold">⏳ Pendiente</span>'
-                }
-            </td>
-        `;
-
-        tbody.appendChild(tr);
-
-    });
-
-    document.getElementById("modal-report")
-        .classList.remove("hidden");
+    try {
+        const respuesta = await fetch(
+            `${API_URL}/estatus/reporte/${id}`
+        );
+        const reporte = await respuesta.json();
+        if (!respuesta.ok) {
+            showToast("Error al obtener el reporte");
+            return;
+        }
+        if (reporte.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3"
+                        class="p-4 text-center text-slate-400 italic">
+                        Ningún alumno ha realizado este trámite.
+                    </td>
+                </tr>
+            `;
+        } else {
+            reporte.forEach(alumno => {
+                const tr = document.createElement("tr");
+                tr.className = "border-b border-slate-200";
+                tr.innerHTML = `
+                    <td class="p-3 font-mono">${alumno.matricula}</td>
+                    <td class="p-3">${alumno.nombre}</td>
+                    <td class="p-3 text-center">
+                        <span class="text-emerald-600 font-bold">
+                            ✅ ${alumno.estado}
+                        </span>
+                    </td>
+                `;
+                 tbody.appendChild(tr);
+            });
+        }
+        document
+            .getElementById("modal-report")
+            .classList.remove("hidden");
+    } catch (error) {
+        console.error(error);
+        showToast("Error al cargar el reporte");
+    }
 }
 
 function closeReportModal() {
@@ -774,6 +863,8 @@ function closeReportModal() {
 
 // INITIAL LOAD
 window.onload = function() {
+    cargarCategorias();
+
     if(state.loggedStudent){
         renderStudentDashboard();
         renderRealizadosTable();
