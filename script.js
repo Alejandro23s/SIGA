@@ -9,7 +9,7 @@ let state = {
     editingTramiteId: null
 };
 
-const API_URL = "https://fwd-artists-authorization-motorola.trycloudflare.com";
+const API_URL = "https://sets-cornell-characterization-specific.trycloudflare.com ";
 
 // UI HELPERS
 function showToast(msg, icon = "fa-check-circle") {
