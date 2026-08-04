@@ -599,6 +599,10 @@ async function handleCreateTramite(e) {
             departamentoId = 3;
         }
         try {
+            const targetGroup =
+            audience === "Grupo"
+                ? Number(document.getElementById("dept-group").value)
+                : null;
             const respuesta = await fetch(`${API_URL}/tramites`, {
                 method: "POST",
                 headers: {
@@ -613,6 +617,7 @@ async function handleCreateTramite(e) {
                     lugarAtencion: location,
                     fechaLimite: `${date} ${time}:00`,
                     targetAudience: audience,
+                    targetGroup: targetGroup,
                     specificMatricula: specificMat.join(",")
                 })
             });
