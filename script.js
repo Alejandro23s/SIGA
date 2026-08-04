@@ -9,7 +9,7 @@ let state = {
     editingTramiteId: null
 };
 
-const API_URL = "https://disposal-reminder-kevin-roommates.trycloudflare.com";
+const API_URL = "https://drawings-mrs-childhood-mag.trycloudflare.com";
 
 // UI HELPERS
 function showToast(msg, icon = "fa-check-circle") {
@@ -74,7 +74,8 @@ async function handleStudentLogin(e) {
         state.loggedStudent = {
             id: alumno.ID,
             matricula: alumno.Matricula,
-            nombre: alumno.Nombre
+            nombre: alumno.Nombre,
+            grupoId: alumno.Grupo_Id
         };
     } catch (error) {
         console.error(error);
@@ -227,12 +228,19 @@ async function renderStudentDashboard() {
         // Si ya lo realizó este alumno, no mostrarlo
         const yaRealizado = realizados.some(r => r.Tramite_Id === t.id);
         if (yaRealizado) return false;
-        // Si el trámite es específico
+        // Todos
+        if (t.targetAudience === "Todos") {
+            return true;
+        }
+        // Grupo
+        if (t.targetAudience === "Grupo") {
+            return Number(t.targetGroup) === Number(state.loggedStudent.grupoId);
+        }
+        // Específico
         if (t.targetAudience === "Especifico") {
             return t.specificMatricula.includes(state.loggedStudent.matricula);
         }
-        // Si es para todos
-        return true;
+        return false;
     });
     console.log("Trámites que verá:", studentTramites);
 
@@ -491,10 +499,24 @@ async function reopenTramiteAction(id) {
 
 // DEPARTAMENTO ACTIONS
 function toggleMatriculasInput() {
-    const isSpecific = document.querySelector('input[name="dept-destinatarios"]:checked').value === "Especifico";
-    const wrapper = document.getElementById("wrapper-specific-matriculas");
-    if (isSpecific) wrapper.classList.remove("hidden");
-    else wrapper.classList.add("hidden");
+    const audience = document.querySelector(
+        'input[name="dept-destinatarios"]:checked'
+    ).value;
+    const matriculasWrapper = document.getElementById("wrapper-specific-matriculas");
+    const groupWrapper = document.getElementById("group-selector-container");
+
+    if (audience === "Todos") {
+        matriculasWrapper.classList.add("hidden");
+        groupWrapper.classList.add("hidden");
+    }
+    else if (audience === "Grupo") {
+        matriculasWrapper.classList.add("hidden");
+        groupWrapper.classList.remove("hidden");
+    }
+    else {
+        matriculasWrapper.classList.remove("hidden");
+        groupWrapper.classList.add("hidden");
+    }
 }
 
 async function handleCreateTramite(e) {
@@ -505,6 +527,7 @@ async function handleCreateTramite(e) {
     const time = document.getElementById("dept-time").value;
     const cat = document.getElementById("dept-category").value;
     const audience = document.querySelector('input[name="dept-destinatarios"]:checked').value;
+    const targetGroup = document.getElementById("group-selector").value;
     const specificMat = document.getElementById("dept-specific-matriculas")
         .value
         .split(",")
@@ -541,7 +564,10 @@ async function handleCreateTramite(e) {
                         lugarAtencion: location,
                         fechaLimite: `${date} ${time}:00`,
                         targetAudience: audience,
-                        specificMatricula: specificMat.join(",")
+                        targetGroup: audience === "Grupo" ? Number(targetGroup) : null,
+                        specificMatricula: audience === "Especifico"
+                            ? specificMat.join(",")
+                            : ""
                     })
                 }
             );
@@ -618,27 +644,34 @@ async function handleCreateTramite(e) {
 }
 
 async function cargarCategorias() {
-
     const respuesta = await fetch(`${API_URL}/categorias`);
-
     const categorias = await respuesta.json();
-
     const select = document.getElementById("dept-category");
-
     select.innerHTML = "";
 
     categorias.forEach(cat => {
-
         const option = document.createElement("option");
-
         option.value = cat.ID;
-
         option.textContent = cat.Nombre;
-
         select.appendChild(option);
 
     });
 
+}
+
+async function cargarGrupos() {
+    const respuesta = await fetch(`${API_URL}/grupos`);
+    const grupos = await respuesta.json();
+    const select = document.getElementById("group-selector");
+    select.innerHTML = `
+        <option value="">Seleccione un grupo</option>
+    `;
+    grupos.forEach(grupo => {
+        const option = document.createElement("option");
+        option.value = grupo.ID;
+        option.textContent = grupo.Nombre;
+        select.appendChild(option);
+    });
 }
 
 
@@ -668,7 +701,15 @@ function renderDeptTable() {
             <td class="p-3 font-bold text-slate-800">${t.title}</td>
             <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded text-[11px] font-semibold">${t.category}</span></td>
             <td class="p-3 text-slate-600 font-mono text-[11px]">${t.deadlineText}</td>
-            <td class="p-3 text-slate-700 font-medium">${t.targetAudience === 'Especifico' ? `Matrícula: ${t.specificMatricula}` : 'Todos los alumnos'}</td>
+            <td class="p-3 text-slate-700 font-medium">
+                ${
+                    t.targetAudience === "Todos"
+                        ? "Todos los alumnos"
+                        : t.targetAudience === "Grupo"
+                            ? `Grupo: ${t.targetGroupName}`
+                            : `Matrícula: ${t.specificMatricula}`
+                }
+            </td>
             <td class="p-3 text-center space-x-1">
             <button
                 onclick="openReportModal(${t.id})"
@@ -864,6 +905,7 @@ function closeReportModal() {
 // INITIAL LOAD
 window.onload = function() {
     cargarCategorias();
+    cargarGrupos();
 
     if(state.loggedStudent){
         renderStudentDashboard();

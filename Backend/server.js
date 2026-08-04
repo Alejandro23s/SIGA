@@ -4,6 +4,7 @@ const tramitesRoutes = require("./routes/tramites");
 const estatusRoutes = require("./routes/estatus");
 const categoriasRoutes = require("./routes/categorias");
 const departamentosRoutes = require("./routes/departamentos");
+const gruposRoutes = require("./routes/grupos");
 const express = require("express");
 const cors = require("cors");
 
@@ -21,6 +22,7 @@ app.use("/estatus", estatusRoutes);
 console.log("Ruta tipos-tramite cargada");
 app.use("/categorias", categoriasRoutes);
 app.use("/departamentos", departamentosRoutes);
+app.use("/grupos", gruposRoutes);
 
 
 app.get("/", (req, res) => {

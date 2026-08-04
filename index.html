@@ -460,9 +460,30 @@
                             <div class="p-3 bg-slate-50 border border-slate-300 rounded-lg space-y-2">
                                 <label class="block font-bold text-slate-800">Destinatarios:</label>
                                 <div class="flex items-center space-x-4">
+                                    <div id="group-selector-container" class="hidden mt-3">
+                                        <label class="block text-sm font-semibold text-slate-700 mb-1">
+                                            Grupo
+                                        </label>
+                                        <select
+                                            id="group-selector"
+                                            class="w-full border border-slate-300 rounded-lg px-3 py-2">
+                                            <option value="">Seleccione un grupo</option>
+                                        </select>
+                                    </div>
                                     <label class="inline-flex items-center cursor-pointer font-semibold text-slate-700">
                                         <input type="radio" name="dept-destinatarios" value="Todos" checked onchange="toggleMatriculasInput()" class="text-icep-navy focus:ring-icep-navy">
                                         <span class="ml-2">Todos los alumnos</span>
+                                    </label>
+
+                                    <label class="inline-flex items-center cursor-pointer font-semibold text-slate-700">
+                                        <input
+                                            type="radio"
+                                            name="dept-destinatarios"
+                                            value="Grupo"
+                                            onchange="toggleMatriculasInput()"
+                                            class="text-icep-navy focus:ring-icep-navy">
+                                        <span class="ml-2">Grupo</span>
+
                                     </label>
                                     <label class="inline-flex items-center cursor-pointer font-semibold text-slate-700">
                                         <input type="radio" name="dept-destinatarios" value="Especifico" onchange="toggleMatriculasInput()" class="text-icep-navy focus:ring-icep-navy">

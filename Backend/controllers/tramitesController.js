@@ -1,7 +1,6 @@
 const db = require("../db");
 
 const obtenerTramites = (req, res) => {
-
     const sql = `
     SELECT
         t.ID AS id,
@@ -11,12 +10,17 @@ const obtenerTramites = (req, res) => {
         t.Lugar_atencion AS location,
         t.Fecha_limite AS deadline,
         t.TargetAudience AS targetAudience,
+        t.TargetGroup AS targetGroup,
+        g.Nombre AS targetGroupName,
         t.SpecificMatricula AS specificMatricula,
 
         c.Nombre AS category,
         d.Nombre AS responsible
 
     FROM tramites t
+
+    LEFT JOIN grupos g
+    ON t.TargetGroup = g.ID
 
     INNER JOIN departamentos d
         ON t.Departamento_Id = d.ID
@@ -72,7 +76,6 @@ const obtenerTramites = (req, res) => {
 };
 
 const crearTramite = (req, res) => {
-
     const {
         departamentoId,
         categoriaId,
@@ -82,6 +85,7 @@ const crearTramite = (req, res) => {
         lugarAtencion,
         fechaLimite,
         targetAudience,
+        targetGroup,
         specificMatricula
     } = req.body;
 
@@ -96,9 +100,10 @@ const crearTramite = (req, res) => {
             Lugar_atencion,
             Fecha_limite,
             TargetAudience,
+            TargetGroup,
             SpecificMatricula
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     db.query(
@@ -112,6 +117,7 @@ const crearTramite = (req, res) => {
             lugarAtencion,
             fechaLimite,
             targetAudience,
+            targetGroup,
             specificMatricula
         ],
         (err, result) => {
@@ -138,6 +144,7 @@ const editarTramite = (req, res) => {
         lugarAtencion,
         fechaLimite,
         targetAudience,
+        targetGroup,
         specificMatricula
     } = req.body;
     const sql = `
@@ -151,6 +158,7 @@ const editarTramite = (req, res) => {
             Lugar_atencion = ?,
             Fecha_limite = ?,
             TargetAudience = ?,
+            TargetGroup = ?,
             SpecificMatricula = ?
         WHERE ID = ?
     `;
@@ -165,6 +173,7 @@ const editarTramite = (req, res) => {
             lugarAtencion,
             fechaLimite,
             targetAudience,
+            targetGroup,
             specificMatricula,
             id
         ],
