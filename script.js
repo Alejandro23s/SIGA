@@ -601,7 +601,7 @@ async function handleCreateTramite(e) {
         try {
             const targetGroup =
             audience === "Grupo"
-                ? Number(document.getElementById("dept-group").value)
+                ? Number(document.getElementById("group-selector").value)
                 : null;
             const respuesta = await fetch(`${API_URL}/tramites`, {
                 method: "POST",
