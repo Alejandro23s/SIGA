@@ -9,7 +9,7 @@ let state = {
     editingTramiteId: null
 };
 
-const API_URL = "https://window-inquiry-blogs-geometry.trycloudflare.com";
+const API_URL = "https://menus-cornell-hydraulic-pulse.trycloudflare.com";
 
 // UI HELPERS
 function showToast(msg, icon = "fa-check-circle") {
@@ -102,7 +102,7 @@ async function handleStudentLogin(e) {
 async function handleDeptLogin(e) {
     e.preventDefault();
     const deptName = document.getElementById("select-dept").value;
-    const pass = document.getElementById("input-dept-password").value;
+    const pass = document.getElementById("input-dept-password").value.trim();
 
     if (pass !== "Admin123") {
         showToast("Contraseña incorrecta.", "fa-triangle-exclamation");
