@@ -9,7 +9,7 @@ let state = {
     editingTramiteId: null
 };
 
-const API_URL = "https://menus-cornell-hydraulic-pulse.trycloudflare.com";
+const API_URL = "https://nevada-chargers-evaluated-introduced.trycloudflare.com";
 
 // UI HELPERS
 function showToast(msg, icon = "fa-check-circle") {
