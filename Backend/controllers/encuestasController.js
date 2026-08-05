@@ -2,16 +2,15 @@ const db = require("../db");
 
 // Obtener todas las encuestas
 const obtenerEncuestas = (req, res) => {
-
     const sql = `
         SELECT
             e.ID,
             a.Nombre AS alumno,
             a.Matricula AS matricula,
-            e.Pregunta1,
-            e.Pregunta2,
-            e.Pregunta3,
-            e.Comentario,
+            e.Priorizacion,
+            e.FacilidadCelular,
+            e.ClaridadInformacion,
+            e.Comentarios,
             e.Fecha
         FROM encuestas_sistema e
 
@@ -36,20 +35,20 @@ const obtenerEncuestas = (req, res) => {
 const crearEncuesta = (req, res) => {
     const {
         alumnoId,
-        pregunta1,
-        pregunta2,
-        pregunta3,
-        comentario
+        priorizacion,
+        facilidadCelular,
+        claridadInformacion,
+        comentarios
     } = req.body;
 
     const sql = `
         INSERT INTO encuestas_sistema
         (
             Alumno_Id,
-            Pregunta1,
-            Pregunta2,
-            Pregunta3,
-            Comentario
+            Priorizacion,
+            FacilidadCelular,
+            ClaridadInformacion,
+            Comentarios
         )
         VALUES (?, ?, ?, ?, ?)
     `;
@@ -57,10 +56,10 @@ const crearEncuesta = (req, res) => {
         sql,
         [
             alumnoId,
-            pregunta1,
-            pregunta2,
-            pregunta3,
-            comentario
+            priorizacion,
+            facilidadCelular,
+            claridadInformacion,
+            comentarios
         ],
         (err) => {
             if (err) {

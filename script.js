@@ -9,7 +9,7 @@ let state = {
     editingTramiteId: null
 };
 
-const API_URL = "https://sets-cornell-characterization-specific.trycloudflare.com";
+const API_URL = "https://window-inquiry-blogs-geometry.trycloudflare.com";
 
 // UI HELPERS
 function showToast(msg, icon = "fa-check-circle") {
@@ -846,10 +846,32 @@ function editTramite(id) {
 
 }
 
-function handleSurveySubmit(e) {
+async function handleSurveySubmit(e) {
     e.preventDefault();
-    showToast("¡Gracias por evaluar SIGA! Tu opinión ha sido registrada.", "fa-heart");
-    switchStudentTab('dashboard');
+    try {
+        const respuesta = await fetch(`${API_URL}/encuestas`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                alumnoId: state.loggedStudent.id,
+                priorizacion: Number(document.getElementById("survey-q1").value),
+                facilidadCelular: document.getElementById("survey-q2").value,
+                claridadInformacion: document.getElementById("survey-q3").value,
+                comentarios: document.getElementById("survey-q4").value
+            })
+        });
+        const data = await respuesta.json();
+        if (!respuesta.ok) {
+            throw new Error(data.mensaje);
+        }
+        showToast("¡Gracias por evaluar SIGA! Tu opinión ha sido registrada.", "fa-heart");
+        switchStudentTab("dashboard");
+    } catch (error) {
+        console.error(error);
+        showToast("No se pudo guardar la encuesta.", "fa-triangle-exclamation");
+    }
 }
 
 async function openReportModal(id) {
