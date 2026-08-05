@@ -104,7 +104,7 @@ async function handleDeptLogin(e) {
     const deptName = document.getElementById("select-dept").value;
     const pass = document.getElementById("input-dept-password").value;
 
-    if (pass !== "12345") {
+    if (pass !== "Admin123") {
         showToast("Contraseña incorrecta.", "fa-triangle-exclamation");
         return;
     }
