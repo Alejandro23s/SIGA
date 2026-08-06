@@ -9,7 +9,7 @@ let state = {
     editingTramiteId: null
 };
 
-const API_URL = "https://nevada-chargers-evaluated-introduced.trycloudflare.com";
+const API_URL = "https://plugins-griffin-repairs-shapes.trycloudflare.com";
 
 // UI HELPERS
 function showToast(msg, icon = "fa-check-circle") {
