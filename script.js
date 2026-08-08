@@ -9,7 +9,7 @@ let state = {
     editingTramiteId: null
 };
 
-const API_URL = "https://muscle-aud-fed-precision.trycloudflare.com";
+const API_URL = "https://festivals-ship-requiring-insight.trycloudflare.com";
 
 // UI HELPERS
 function showToast(msg, icon = "fa-check-circle") {
